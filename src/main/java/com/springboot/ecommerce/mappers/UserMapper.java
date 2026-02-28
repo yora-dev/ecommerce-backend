@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @Component
 public class UserMapper {
-	private RoleRepository roleRepository;
 	private PasswordEncoder passwordEncoder;
 
 	public User toEntity(RegisterUserRequest request) {
@@ -18,8 +17,6 @@ public class UserMapper {
 		return User.builder()
 				.username(request.getUsername())
 				.email(request.getEmail())
-				.password(passwordEncoder.encode(request.getPassword()))
-				.role(roleRepository.findByName("CUSTOMER"))
 				.build();
 	}
 
@@ -28,7 +25,7 @@ public class UserMapper {
 		userDto.setId(user.getId());
 		userDto.setUsername(user.getUsername());
 		userDto.setEmail(user.getEmail());
-		userDto.setRole(user.getRole().getName());
+		userDto.setRole(user.getRole());
 		return userDto;
 	}
 

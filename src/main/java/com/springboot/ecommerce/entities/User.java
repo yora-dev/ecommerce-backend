@@ -27,8 +27,8 @@ public class User {
 	@Column(name = "password")
 	private String password;
 
-	@ManyToOne
-	@JoinColumn(name = "role_id")
+	@Enumerated(EnumType.STRING)
+	@Column(name = "role")
 	private Role role;
 
 	@Column(name = "created_at")
@@ -38,14 +38,14 @@ public class User {
 	private LocalDateTime updatedAt;
 
 	public boolean isSeller() {
-		return role != null && "SELLER".equalsIgnoreCase(role.getName());
+		return role == Role.SELLER;
 	}
 
 	public boolean isAdmin() {
-		return role != null && "ADMIN".equalsIgnoreCase(role.getName());
+		return role == Role.SYSADMIN;
 	}
 
 	public boolean isCustomer() {
-		return role != null && "CUSTOMER".equalsIgnoreCase(role.getName());
+		return role == Role.CUSTOMER;
 	}
 }

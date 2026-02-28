@@ -3,6 +3,7 @@ package com.springboot.ecommerce.services;
 import com.springboot.ecommerce.dtos.RegisterUserRequest;
 import com.springboot.ecommerce.dtos.LoginDto;
 import com.springboot.ecommerce.dtos.UserDto;
+import com.springboot.ecommerce.entities.Role;
 import com.springboot.ecommerce.entities.User;
 import com.springboot.ecommerce.exceptions.DuplicateResourceException;
 import com.springboot.ecommerce.exceptions.UserNotFoundException;
@@ -34,6 +35,7 @@ public class AuthService {
 
 		User user = userMapper.toEntity(registerRequest);
 		user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+		user.setRole(Role.CUSTOMER);
 		userRepository.save(user);
 
 		return userMapper.toDto(user);

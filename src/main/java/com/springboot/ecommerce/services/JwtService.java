@@ -1,6 +1,7 @@
 package com.springboot.ecommerce.services;
 
 import com.springboot.ecommerce.config.JwtConfig;
+import com.springboot.ecommerce.entities.Role;
 import com.springboot.ecommerce.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -19,6 +20,7 @@ public class JwtService {
 				.subject(user.getId().toString())
 				.claim("username", user.getUsername())
 				.claim("email", user.getEmail())
+				.claim("role", user.getRole())
 				.issuedAt(new Date())
 				.expiration(new Date(System.currentTimeMillis() + 1000 * tokenExpiration))
 				.signWith(jwtConfig.getSecretKey())
@@ -46,6 +48,11 @@ public class JwtService {
 
 	public Long extractUserId(String token) {
 		return Long.valueOf(getClaims(token).getSubject());
+	}
+
+	public Role extractUserRole(String token) {
+		String role = getClaims(token).get("role", String.class);
+		return Role.valueOf(role);
 	}
 
 	private Claims getClaims(String token) {

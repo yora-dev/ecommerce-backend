@@ -1,5 +1,6 @@
 package com.springboot.ecommerce.config;
 
+import com.springboot.ecommerce.entities.Role;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(c-> c
 						.requestMatchers("/auth/**").permitAll()
 						.requestMatchers("/swagger-ui/**").permitAll()
+						.requestMatchers("/admin/**").hasRole(Role.SYSADMIN.name())
 						.requestMatchers("/v3/api-docs").permitAll()
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
