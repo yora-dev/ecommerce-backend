@@ -1,3 +1,16 @@
 spring:
   application:
     name: ecommerce
+    datasource:
+      url: ${DATABASE_URL}
+      username: ${DATABASE_USERNAME}
+      password: ${DATABASE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  jwt:
+    secretKey: ${JWT_SECRET}
+    refreshTokenExpiration: 604800 #7day
+    accessTokenExpiration: 604800 #5m change it 300 later
