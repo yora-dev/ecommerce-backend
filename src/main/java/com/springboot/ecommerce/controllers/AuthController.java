@@ -3,6 +3,8 @@ package com.springboot.ecommerce.controllers;
 import com.springboot.ecommerce.config.JwtConfig;
 import com.springboot.ecommerce.dtos.*;
 import com.springboot.ecommerce.entities.User;
+import com.springboot.ecommerce.exceptions.DuplicateResourceException;
+import com.springboot.ecommerce.exceptions.UserNotFoundException;
 import com.springboot.ecommerce.repositories.UserRepository;
 import com.springboot.ecommerce.services.AuthService;
 import com.springboot.ecommerce.services.JwtService;
@@ -13,10 +15,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @AllArgsConstructor
@@ -75,4 +76,13 @@ public class AuthController {
 				null,
 				new LoginResponse(accessToken)));
 	}
+
+	@GetMapping("/me")
+	public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {
+		return ResponseEntity.ok(new ApiResponse<>(
+				true,
+				null,
+				authService.loggedInUser()));
+	}
+
 }

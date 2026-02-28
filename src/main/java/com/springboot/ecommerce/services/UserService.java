@@ -1,26 +1,13 @@
 package com.springboot.ecommerce.services;
 
-import com.springboot.ecommerce.repositories.UserRepository;
-import lombok.AllArgsConstructor;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.springboot.ecommerce.dtos.SellerProfileDto;
+import com.springboot.ecommerce.dtos.UpgradeToSellerRequest;
+import com.springboot.ecommerce.dtos.UserDto;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-
-@AllArgsConstructor
 @Service
-public class UserService implements UserDetailsService {
-	private final UserRepository userRepository;
+public interface UserService {
+	UserDto getUserById(Long userId);
+	SellerProfileDto upgradeToSeller(Long userId, UpgradeToSellerRequest dto);
 
-
-	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		var user = userRepository.findByUsername(username).orElseThrow(
-				() -> new UsernameNotFoundException("User not found"));
-
-		return new User(user.getUsername(), user.getPassword(), Collections.emptyList());
-	}
 }

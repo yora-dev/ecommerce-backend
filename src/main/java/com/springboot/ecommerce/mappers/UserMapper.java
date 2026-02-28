@@ -7,6 +7,9 @@ import com.springboot.ecommerce.repositories.RoleRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+
 @AllArgsConstructor
 @Component
 public class UserMapper {
@@ -17,6 +20,7 @@ public class UserMapper {
 		return User.builder()
 				.username(request.getUsername())
 				.email(request.getEmail())
+				.createdAt(LocalDateTime.now())
 				.build();
 	}
 

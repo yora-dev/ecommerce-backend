@@ -2,7 +2,9 @@ package com.springboot.ecommerce.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
 @Table(name = "seller_profiles")
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
+@Setter
 
 public class SellerProfile {
 	@Id
@@ -27,8 +31,8 @@ public class SellerProfile {
 	@JoinColumn(name = "user_id")
 	private User user;
 
-	@Column(name = "verified")
-	private boolean verified;
+//	@Column(name = "verified")
+//	private boolean verified;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
