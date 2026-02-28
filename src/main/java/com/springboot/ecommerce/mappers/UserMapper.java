@@ -1,7 +1,7 @@
 package com.springboot.ecommerce.mappers;
 
+import com.springboot.ecommerce.dtos.RegisterUserRequest;
 import com.springboot.ecommerce.dtos.UserDto;
-import com.springboot.ecommerce.entities.Role;
 import com.springboot.ecommerce.entities.User;
 import com.springboot.ecommerce.repositories.RoleRepository;
 import lombok.AllArgsConstructor;
@@ -13,15 +13,14 @@ public class UserMapper {
 	private RoleRepository roleRepository;
 	private PasswordEncoder passwordEncoder;
 
-	public User toEntity(String username, String email, String password) {
+	public User toEntity(RegisterUserRequest request) {
 
 		return User.builder()
-				.username(username)
-				.email(email)
-				.password(passwordEncoder.encode(password))
+				.username(request.getUsername())
+				.email(request.getEmail())
+				.password(passwordEncoder.encode(request.getPassword()))
 				.role(roleRepository.findByName("CUSTOMER"))
 				.build();
-
 	}
 
 	public UserDto toDto(User user) {
