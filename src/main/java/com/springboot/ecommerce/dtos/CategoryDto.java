@@ -21,6 +21,7 @@ public class CategoryDto {
 
 	public CategoryDto toDto(Category category) {
 		return CategoryDto.builder()
+				.categoryId(category.getId())
 				.name(category.getName())
 				.description(category.getDescription())
 				.createdAt(category.getCreatedAt())

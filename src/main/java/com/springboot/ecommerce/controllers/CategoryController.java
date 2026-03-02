@@ -66,8 +66,8 @@ public class CategoryController {
 				categoryService.updateCategory(userId, categoryId, request));
 
 		return ResponseEntity.ok(response);
-
 	}
+
 
 	@DeleteMapping("/{categoryId}")
 	@PreAuthorize("hasRole('SYSADMIN')")
