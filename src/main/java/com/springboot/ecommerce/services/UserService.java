@@ -49,7 +49,7 @@ public class UserService implements UserDetailsService {
 		if(!Objects.equals(user.getId(), dto.getUserId()))
 			throw new IllegalStateException("Forbidden: You can only upgrade your own account");
 
-		if((user.getRole() != Role.CUSTOMER))
+		if(!user.isCustomer())
 			throw new IllegalStateException("Only customers can upgrade to sellers");
 
 		var sellerProfile = new SellerProfile();
