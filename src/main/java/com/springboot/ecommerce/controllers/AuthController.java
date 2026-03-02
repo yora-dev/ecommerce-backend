@@ -77,12 +77,15 @@ public class AuthController {
 				new LoginResponse(accessToken)));
 	}
 
-	@GetMapping("/me")
-	public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {
-		return ResponseEntity.ok(new ApiResponse<>(
-				true,
-				null,
-				authService.loggedInUser()));
-	}
+//	@GetMapping("/me")
+//	public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(
+//			@AuthenticationPrincipal Long userId) {
+//		return ResponseEntity.ok(new ApiResponse<>(
+//				true,
+//				null,
+//				authService.loggedInUser(userId)));
+//	}
+
+
 
 }

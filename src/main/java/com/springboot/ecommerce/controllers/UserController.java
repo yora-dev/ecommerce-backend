@@ -3,6 +3,7 @@ package com.springboot.ecommerce.controllers;
 import com.springboot.ecommerce.dtos.ApiResponse;
 import com.springboot.ecommerce.dtos.SellerProfileDto;
 import com.springboot.ecommerce.dtos.UpgradeToSellerRequest;
+import com.springboot.ecommerce.dtos.UserDto;
 import com.springboot.ecommerce.services.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,5 +26,15 @@ public class UserController {
 				true,
 				null,
 				userService.upgradeToSeller(userId, dto)));
+	}
+
+	@GetMapping("/me")
+	public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(@AuthenticationPrincipal Long userId) {
+
+		return ResponseEntity.ok(new ApiResponse<>(
+				true,
+				null,
+				userService.loggedInUser(userId)
+		));
 	}
 }

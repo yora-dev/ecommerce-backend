@@ -1,5 +1,6 @@
 package com.springboot.ecommerce.config;
 
+import com.springboot.ecommerce.entities.Role;
 import com.springboot.ecommerce.services.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -43,13 +44,13 @@ public class JwtFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		var role = jwtService.extractUserRole(token);
-		var userId = jwtService.extractUserId(token);
+		Long userId = jwtService.extractUserId(token);
+		Role role = jwtService.extractUserRole(token);
 
 		var authentication = new UsernamePasswordAuthenticationToken(
 				userId,
 				null,
-				List.of(new SimpleGrantedAuthority("ROLE_" + role))
+				List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
 		);
 
 		authentication.setDetails(

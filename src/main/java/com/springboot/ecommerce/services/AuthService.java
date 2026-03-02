@@ -56,14 +56,6 @@ public class AuthService {
 		return user;
 	}
 
-	public UserDto loggedInUser() {
-		var authentication = SecurityContextHolder.getContext().getAuthentication();
-		Long userId = (Long) authentication.getPrincipal();
-		User user = userRepository.findById(userId).orElse(null);
 
-		if(user == null)
-			throw new UserNotFoundException();
 
-		return userMapper.toDto(user);
-	}
 }
