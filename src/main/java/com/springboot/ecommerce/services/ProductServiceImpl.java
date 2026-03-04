@@ -15,6 +15,8 @@ import com.springboot.ecommerce.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @AllArgsConstructor
 public class ProductServiceImpl implements ProductService {
@@ -38,10 +40,11 @@ public class ProductServiceImpl implements ProductService {
 		Product product = productMapper.toEntity(dto);
 		product.setCategory(category);
 		product.setSeller(user);
+		category.setUpdatedAt(LocalDateTime.now());
+		categoryRepository.save(category);
 		productRepository.save(product);
 
 		return productMapper.toDto(product);
 	}
-
 
 }
