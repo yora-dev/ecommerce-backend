@@ -5,6 +5,9 @@ import com.springboot.ecommerce.dtos.CreateCategoryRequest;
 import com.springboot.ecommerce.dtos.UpdateCategoryRequest;
 import com.springboot.ecommerce.entities.Category;
 import com.springboot.ecommerce.entities.User;
+import com.springboot.ecommerce.exceptions.CategoryNotFoundException;
+import com.springboot.ecommerce.exceptions.UnauthorizedAdminException;
+import com.springboot.ecommerce.exceptions.UnauthorizedSellerException;
 import com.springboot.ecommerce.exceptions.UserNotFoundException;
 import com.springboot.ecommerce.repositories.CategoryRepository;
 import com.springboot.ecommerce.repositories.UserRepository;
@@ -25,7 +28,7 @@ public class CategoryServiceImpl implements CategoryService{
 		User user =
 				userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 		if(!user.isAdmin()) {
-			throw new RuntimeException("Only admins can create category");
+			throw new UnauthorizedAdminException("Only admins can create category");
 		}
 
 		Category category = new Category();
@@ -52,7 +55,7 @@ public class CategoryServiceImpl implements CategoryService{
 
 		Category category =  categoryRepository
 				.findById(categoryId)
-				.orElseThrow(() -> new RuntimeException("Category not found"));
+				.orElseThrow(CategoryNotFoundException::new);
 
 		return new CategoryDto().toDto(category);
 	}
@@ -60,10 +63,11 @@ public class CategoryServiceImpl implements CategoryService{
 	@Override
 	public CategoryDto updateCategory(Long userId, Long categoryId, UpdateCategoryRequest request) {
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-		Category category = categoryRepository.findById(categoryId).orElseThrow(()-> new RuntimeException("Category not found"));
+
+		Category category = categoryRepository.findById(categoryId).orElseThrow(CategoryNotFoundException::new);
 
 		if(!user.isAdmin()) {
-			throw new RuntimeException("Only admins can update category");
+			throw new UnauthorizedAdminException("Only admins can update category");
 		}
 
 		if((request.getName() != null)) {
@@ -83,10 +87,10 @@ public class CategoryServiceImpl implements CategoryService{
 	@Override
 	public void deleteCategory(Long userId, Long categoryId) {
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-		Category category = categoryRepository.findById(categoryId).orElseThrow(()-> new RuntimeException("Category not found"));
+		Category category = categoryRepository.findById(categoryId).orElseThrow(CategoryNotFoundException::new);
 
 		if(!user.isAdmin()) {
-			throw new RuntimeException("Only admins can update category");
+			throw new UnauthorizedAdminException("Only admins can delete category.");
 		}
 
 		categoryRepository.delete(category);

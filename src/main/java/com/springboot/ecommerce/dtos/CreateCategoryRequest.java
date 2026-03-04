@@ -5,10 +5,10 @@ import lombok.Data;
 
 @Data
 public class CreateCategoryRequest {
-	@NotNull(message = "Name is required")
+	@NotNull(message = "Category name is required")
 	private String name;
 
-	@NotNull(message = "Description is required")
+	@NotNull(message = "Category description is required")
 	private String description;
 
 }
