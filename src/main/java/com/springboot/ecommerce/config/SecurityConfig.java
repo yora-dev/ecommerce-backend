@@ -1,8 +1,10 @@
 package com.springboot.ecommerce.config;
 
+import com.springboot.ecommerce.entities.Role;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -20,8 +22,8 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity
 @AllArgsConstructor
+@EnableWebSecurity
 public class SecurityConfig {
 
 	private final UserDetailsService userDetailsService;
@@ -35,13 +37,21 @@ public class SecurityConfig {
 				.csrf(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(c-> c
 						.requestMatchers("/auth/**").permitAll()
+						.requestMatchers(HttpMethod.GET,"/categories/**").permitAll()
+						.requestMatchers(HttpMethod.POST, "/categories/**").hasRole(Role.SYSADMIN.name())
+						.requestMatchers(HttpMethod.PUT, "/categories/**").hasRole(Role.SYSADMIN.name())
+						.requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole(Role.SYSADMIN.name())
+						.requestMatchers(HttpMethod.GET, "/products/**").permitAll()
+						.requestMatchers(HttpMethod.POST, "/products/**").hasRole(Role.SELLER.name())
+						.requestMatchers(HttpMethod.PUT, "/products/**").hasRole(Role.SELLER.name())
+						.requestMatchers(HttpMethod.DELETE, "/products/**").hasRole(Role.SELLER.name())
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 				.exceptionHandling(c -> {
 					c.authenticationEntryPoint(
 							new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
 					);
-					c.accessDeniedHandler((request, response, accessDeniedExcepiton) ->
+					c.accessDeniedHandler((request, response, accessDeniedException) ->
 							response.setStatus(HttpStatus.FORBIDDEN.value()));
 				});
 		return http.build();

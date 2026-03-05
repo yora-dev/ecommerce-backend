@@ -1,20 +1,73 @@
-API Endpoints
-=============
+# ecommerce — Developer documentation
 
-This document lists the HTTP endpoints implemented in the project and describes their HTTP method, request body shapes, and response envelope.
+This repository is a small Spring Boot backend for an e-commerce-like application. The project provides user authentication (JWT + refresh token cookie), user management (upgrade to seller), and basic category management endpoints.
 
-Response envelope
------------------
-All successful endpoints return an ApiResponse<T> JSON object with the following shape:
+Quick status
+------------
+- Java + Spring Boot application (Maven wrapper included).
+- Endpoints documented below: /auth, /users, /categories.
+- JWT-based access tokens and refresh tokens (refresh token is returned as an HttpOnly cookie).
+
+Prerequisites
+-------------
+- JDK 17 (or matching the project's target Java version).
+- Maven (the repository includes `mvnw` so you can use the wrapper without installing Maven).
+- A running database compatible with Spring Data JPA (e.g., Postgres, MySQL). The app reads DB configuration from environment variables (see below).
+
+Environment variables
+---------------------
+The application uses the following environment variables (used in `src/main/resources/application.yaml`):
+
+- DATABASE_URL — JDBC URL for the database, e.g. `jdbc:postgresql://localhost:5432/ecommerce`
+- DATABASE_USERNAME — database user
+- DATABASE_PASSWORD — database password
+- JWT_SECRET — secret key used to sign JWTs (must be long enough for HMAC-SHA; keep secret)
+
+Note: The YAML file uses properties under `spring.jwt.*` for token expirations and the secret; the code reads `spring.jwt.secret-key` (hyphenated) — ensure your property names match what's configured in your environment or set the environment variable `JWT_SECRET` used in the YAML.
+
+Build & run
+-----------
+From the project root you can run with the included Maven wrapper:
+
+```bash
+./mvnw clean package
+./mvnw spring-boot:run
+```
+
+Or build a JAR and run it:
+
+```bash
+./mvnw clean package
+java -jar target/*.jar
+```
+
+By default the application will use the Spring Boot default port (8080) unless overridden via `server.port`.
+
+API overview
+------------
+All successful responses conform to ApiResponse<T>:
 
 {
-  "success": boolean,
+  "success": true|false,
   "errors": ["..."], // or null
-  "data": T // the actual payload
+  "data": T
 }
 
-Controllers and endpoints
--------------------------
+For failing operations, `success` is false and `errors` contains messages.
+
+Authentication & tokens
+-----------------------
+- /auth/login returns an access token in the JSON body and sets a refresh token in an HttpOnly cookie named `refreshToken` with Path=/auth/refresh.
+- Access tokens are JWTs and should be sent in the Authorization header as `Authorization: Bearer <token>` for protected endpoints.
+- To obtain a new access token, POST to /auth/refresh with the `refreshToken` cookie present.
+
+Security notes
+- The refresh cookie is set with `HttpOnly` and `Secure` flags in the current code. `Secure` requires HTTPS to be present in most browsers; during local HTTP development you may need to change cookie settings in the code to allow non-HTTPS testing (not recommended for production).
+- Token expiration values are configured via `spring.jwt.accessTokenExpiration` and `spring.jwt.refreshTokenExpiration` (duration units used in code are seconds multiplied by 1000 when building the JWT expiration), and the secret key is taken from `spring.jwt.secret-key` (see note above about YAML vs code property names).
+
+Endpoints
+---------
+The controllers in this project and their endpoints are summarized below. Examples use curl and assume the server is running on http://localhost:8080.
 
 1) AuthController (base path: /auth)
 
@@ -22,75 +75,134 @@ Controllers and endpoints
   - Description: Register a new user.
   - Request body (JSON): RegisterUserRequest
     {
-      "username": "string", // required
-      "email": "string", // required, must be a valid email
-      "password": "string" // required
+      "username": "string",
+      "email": "string", // must be a valid email
+      "password": "string"
     }
   - Response: ApiResponse<UserDto>
-    UserDto:
-    {
-      "id": number,
-      "username": "string",
-      "email": "string",
-      "role": { /* Role entity fields */ }
-    }
+
+  Example:
+  ```bash
+  curl -X POST http://localhost:8080/auth/signup \
+    -H "Content-Type: application/json" \
+    -d '{"username":"alice","email":"alice@example.com","password":"P@ssw0rd"}'
+  ```
 
 - POST /auth/login
-  - Description: Authenticate a user and return an access token. Also sets an HttpOnly cookie named "refreshToken" for refresh operations.
+  - Description: Authenticate a user and return an access token. Also sets an HttpOnly cookie `refreshToken`.
   - Request body (JSON): LoginDto
     {
       "username": "string",
       "password": "string"
     }
   - Response: ApiResponse<LoginResponse>
-    LoginResponse:
     {
-      "token": "<access-token-string>"
+      "token": "<access-token>"
     }
-  - Notes: The server sets a cookie `refreshToken` (HttpOnly, Path=/auth/refresh) with a refresh token. Access tokens are returned in the JSON response.
+
+  Notes: The controller sets a cookie named `refreshToken` with Path=/auth/refresh and HttpOnly.
+
+  Example:
+  ```bash
+  curl -i -X POST http://localhost:8080/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"username":"alice","password":"P@ssw0rd"}'
+  ```
+  The `-i` flag shows headers; the `Set-Cookie` header will contain the refresh token.
 
 - POST /auth/refresh
-  - Description: Exchange refresh token (sent as cookie) for a new access token.
-  - Request body: none. Must include cookie named `refreshToken`.
-  - Response: ApiResponse<LoginResponse>
-    {
-      "token": "<new-access-token>"
-    }
+  - Description: Exchange the refresh token (sent as cookie) for a new access token.
+  - Request body: none. The request must include the `refreshToken` cookie.
+  - Response: ApiResponse<LoginResponse> with a new access token.
 
-- GET /auth/me
-  - Description: Returns the currently authenticated user's details.
-  - Request body: none (requires authentication, typically by presenting the access token in Authorization header).
-  - Response: ApiResponse<UserDto>
+  Example (using cookie from previous response):
+  ```bash
+  # If you saved the cookie in a cookie jar
+  curl -b cookies.txt -c cookies.txt -X POST http://localhost:8080/auth/refresh
+  ```
+
+- GET /auth/me (currently commented out in controller code)
+  - Description: Return the currently authenticated user's details (requires Authorization header)
 
 2) UserController (base path: /users)
 
 - POST /users/upgrade-to-seller
   - Description: Upgrade a customer account to a seller profile.
-  - Authorization: @PreAuthorize("hasRole('CUSTOMER')") — user must have CUSTOMER role.
+  - Authorization: requires authenticated user with role CUSTOMER (method annotated with @PreAuthorize("hasRole('CUSTOMER')")).
   - Request body (JSON): UpgradeToSellerRequest
     {
-      "userId": number, // the id of the user to upgrade (the controller also accepts authenticated principal userId)
       "storeName": "string",
       "description": "string"
     }
-  - Notes: The endpoint gets the authenticated user id via @AuthenticationPrincipal Long userId in the controller method signature.
   - Response: ApiResponse<SellerProfileDto>
-    SellerProfileDto:
+
+  Example (replace <token> with an access token):
+  ```bash
+  curl -X POST http://localhost:8080/users/upgrade-to-seller \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{"storeName":"Alice Shop","description":"My store"}'
+  ```
+
+- GET /users/me
+  - Description: Returns details for the authenticated user.
+  - Authorization: pass access token in Authorization header.
+
+  Example:
+  ```bash
+  curl http://localhost:8080/users/me -H "Authorization: Bearer <token>"
+  ```
+
+3) CategoryController (base path: /categories)
+
+- POST /categories
+  - Description: Create a category (requires SYSADMIN role).
+  - Request body (JSON): CreateCategoryRequest
     {
-      "id": number,
-      "storeName": "string",
-      "description": "string",
-      "userId": number,
-      "createdAt": "YYYY-MM-DDTHH:MM:SS" // ISO datetime
+      "name": "string",
+      "description": "string"
     }
+  - Response: ApiResponse<CategoryDto>
 
-Notes and assumptions
----------------------
-- Authentication: Access tokens appear to be JWTs returned in the response of /auth/login and /auth/refresh. To call protected endpoints (e.g., /users/upgrade-to-seller, /auth/me), include the access token in the Authorization header as `Authorization: Bearer <token>` (common pattern used with JwtFilter/SecurityConfig in the project).
-- Error responses: When operation fails, controllers use the ApiResponse with success=false and errors listing messages.
-- Some request fields are validated (e.g., RegisterUserRequest fields are annotated with @NotNull and @Email).
+- GET /categories
+  - Description: List all categories.
+  - Response: ApiResponse<List<CategoryDto>>
 
-If you want, I can also:
-- Add example curl commands for each endpoint.
-- Expand the Role and UserDto shapes by including role enum/fields from the entities.
-- Generate OpenAPI/Swagger annotations or a small Postman collection.
+- GET /categories/{categoryId}
+  - Description: Get category by id.
+  - Response: ApiResponse<CategoryDto>
+
+- PUT /categories/{categoryId}
+  - Description: Update category (requires SYSADMIN role).
+  - Request body: UpdateCategoryRequest
+  - Response: ApiResponse<CategoryDto>
+
+- DELETE /categories/{categoryId}
+  - Description: Delete category (requires SYSADMIN role).
+  - Response: HTTP 204 No Content on success
+
+Troubleshooting & common notes
+------------------------------
+- Cookies & Secure flag: The code sets the refresh cookie with `cookie.setSecure(true);`. Browsers require HTTPS to send secure cookies. For local development over HTTP you may need to relax that or test refresh with a manual cookie header (not recommended for production).
+- JWT secret: Ensure `JWT_SECRET` is sufficiently long for the HMAC algorithm used by the project. Keep it secret.
+- Property names: The code expects `spring.jwt.secret-key` while `application.yaml` uses `spring.jwt.secretKey` (camelCase). If you encounter missing property errors, align your environment variables or YAML keys with the names the code expects (or update the `JwtConfig`/YAML to match).
+
+Testing
+-------
+- There is a basic test class at `src/test/java/.../EcommerceApplicationTests.java`. Run tests with:
+
+```bash
+./mvnw test
+```
+
+Next improvements (suggested)
+---------------------------
+- Add OpenAPI/Swagger documentation for automatic API docs and testing UI.
+- Provide a Postman collection or HTTPie examples.
+- Add integration tests for authentication flows (login -> use refresh cookie -> refresh -> access protected endpoint).
+- Clarify and unify JWT property names between `application.yaml` and `JwtConfig`.
+
+If you'd like, I can:
+- Add example Postman/export collection.
+- Add OpenAPI annotations and a Swagger UI endpoint.
+- Fix the `spring.jwt` property naming mismatch in source or YAML and run the app locally to verify.
