@@ -21,11 +21,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.util.List;
-
 @Configuration
-@EnableWebSecurity
 @AllArgsConstructor
+@EnableWebSecurity
 public class SecurityConfig {
 
 	private final UserDetailsService userDetailsService;
@@ -43,13 +41,17 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/categories/**").hasRole(Role.SYSADMIN.name())
 						.requestMatchers(HttpMethod.PUT, "/categories/**").hasRole(Role.SYSADMIN.name())
 						.requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole(Role.SYSADMIN.name())
+						.requestMatchers(HttpMethod.GET, "/products/**").permitAll()
+						.requestMatchers(HttpMethod.POST, "/products/**").hasRole(Role.SELLER.name())
+						.requestMatchers(HttpMethod.PUT, "/products/**").hasRole(Role.SELLER.name())
+						.requestMatchers(HttpMethod.DELETE, "/products/**").hasRole(Role.SELLER.name())
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 				.exceptionHandling(c -> {
 					c.authenticationEntryPoint(
 							new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
 					);
-					c.accessDeniedHandler((request, response, accessDeniedExcepiton) ->
+					c.accessDeniedHandler((request, response, accessDeniedException) ->
 							response.setStatus(HttpStatus.FORBIDDEN.value()));
 				});
 		return http.build();
