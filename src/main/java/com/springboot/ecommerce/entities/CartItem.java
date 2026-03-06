@@ -35,4 +35,8 @@ public class CartItem {
 
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
+
+	public boolean isYourCartItem(Long userId) {
+		return cart != null && cart.getUser() != null && cart.getUser().getId().equals(userId);
+	}
 }
