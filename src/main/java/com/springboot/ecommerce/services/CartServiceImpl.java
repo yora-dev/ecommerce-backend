@@ -29,8 +29,8 @@ public class CartServiceImpl implements CartService{
 	private UserRepository userRepository;
 	private CartMapper cartMapper;
 
-	@Transactional
 	@Override
+	@Transactional
 	public CartDto addToCart(Long userId, AddToCartRequest dto) {
 
 		User user = userRepository.findById(userId)
@@ -91,11 +91,13 @@ public class CartServiceImpl implements CartService{
 						() -> addCartItemToCart(cart, product, addedQuantity)
 				);
 
+		cartRepository.save(cart);
 		return cartMapper.toCartDto(cart);
 	}
 
 	@Override
 	public CartDto getCart(Long userId) {
+
 		return null;
 	}
 
@@ -127,5 +129,8 @@ public class CartServiceImpl implements CartService{
 		cartItem.setQuantity(quantity);
 
 		cartItemRepository.save(cartItem);
+
+		cart.getItems().add(cartItem);
+		cartRepository.save(cart);
 	}
 }

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -30,7 +31,7 @@ public class Cart {
 			cascade = CascadeType.ALL ,
 			orphanRemoval = true
 	)
-	private List<CartItem> items;
+	private List<CartItem> items = new ArrayList<>();
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
