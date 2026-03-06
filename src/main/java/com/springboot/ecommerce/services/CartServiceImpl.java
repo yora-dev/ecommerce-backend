@@ -51,20 +51,13 @@ public class CartServiceImpl implements CartService{
 
 		Integer availableStock = product.getStockQuantity();
 
-
 		Cart cart;
 
 		if (user.hasCart()) {
 			cart = user.getCart();
 			cart.setUpdatedAt(LocalDateTime.now());
 		} else {
-			cart = new Cart();
-			cart.setUser(user);
-			cart.setCreatedAt(LocalDateTime.now());
-			cartRepository.save(cart);
-
-			user.setCart(cart);
-			userRepository.save(user);
+			cart = createCartForUser(user);
 		}
 
 		if (cart.getItems() == null) {
@@ -97,27 +90,142 @@ public class CartServiceImpl implements CartService{
 
 	@Override
 	public CartDto getCart(Long userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(UserNotFoundException::new);
 
-		return null;
+		if (!user.isCustomer()) {
+			throw new IllegalArgumentException("Only customers have carts");
+		}
+
+		Cart cart;
+
+		if(user.hasCart()) {
+			cart = user.getCart();
+			return cartMapper.toCartDto(cart);
+		}
+
+		cart = createCartForUser(user);
+
+		return cartMapper.toCartDto(cart);
 	}
 
 	@Override
 	public CartItemDto getCartItem(Long userId, Long cartItemId) {
-		return null;
+		User user = userRepository.findById(userId)
+				.orElseThrow(UserNotFoundException::new);
+
+		if (!user.isCustomer()) {
+			throw new IllegalArgumentException("Only customers have carts");
+		}
+
+		if (!user.hasCart()) {
+			throw new IllegalArgumentException("User does not have a cart");
+		}
+
+		CartItem cartItem = cartItemRepository.findById(cartItemId)
+				.orElseThrow(() -> new IllegalArgumentException("Cart item not found"));
+
+		if (!cartItem.isYourCartItem(userId)) {
+			throw new IllegalArgumentException("Cart item does not belong to user");
+		}
+
+
+
+		return cartMapper.toCartItemDto(cartItem);
 	}
 
 	@Override
-	public void removeFromCart(Long userId, Long cartId, Long productId) {
+	public CartDto removeFromCart(Long userId, Long productId) {
+		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
+		if (!user.isCustomer()) {
+			throw new RuntimeException("Only customers have carts");
+		}
+
+		if (!user.hasCart()) {
+			throw new IllegalArgumentException("User does not have a cart");
+		}
+
+		Cart cart = user.getCart();
+		cart.getItems().stream()
+				.filter(item -> item.getProduct().getId().equals(productId))
+				.findFirst()
+				.ifPresentOrElse(
+						item -> {
+							cart.getItems().remove(item);
+							cart.setUpdatedAt(LocalDateTime.now());
+							cartItemRepository.delete(item);
+							cartRepository.save(cart);
+						},
+						() -> {
+							throw new IllegalArgumentException("Product not found in cart");
+						}
+				);
+
+		cartRepository.save(cart);
+		return cartMapper.toCartDto(cart);
 	}
 
 	@Override
-	public void updateCartItem(Long userId, Long cartId, Long productId, Integer quantity) {
+	public CartDto updateCartItemQuantity(Long userId, Long productId, Integer quantity) {
+		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
+		if (!user.isCustomer()) {
+			throw new RuntimeException("Only a customer has cart");
+		}
+
+		if (!user.hasCart()) {
+			throw new IllegalArgumentException("User does not have a cart");
+		}
+
+		Product product = productRepository.findById(productId)
+				.orElseThrow(ProductNotFoundException::new);
+
+		Integer availableStock = product.getStockQuantity();
+
+
+		Cart cart = user.getCart();
+
+		if (availableStock < quantity || quantity <= 0) {
+			throw new IllegalArgumentException("Not enough stock available");
+		}
+
+		cart.getItems().stream()
+				.filter(item -> item.getProduct().getId().equals(productId))
+				.findFirst()
+				.ifPresentOrElse(
+						item -> {
+							item.setQuantity(quantity);
+							item.setUpdatedAt(LocalDateTime.now());
+							cart.setUpdatedAt(LocalDateTime.now());
+							cartRepository.save(cart);
+						},
+						() -> {
+							throw new IllegalArgumentException("Product not found in cart");
+						}
+				);
+
+		cartRepository.save(cart);
+		return cartMapper.toCartDto(cart);
 	}
 
 	@Override
-	public void clearCart(Long userId, Long cartId) {
+	public void clearCart(Long userId) {
+		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+
+		if (!user.isCustomer()) {
+			throw new RuntimeException("Only a customer has cart");
+		}
+
+		if (!user.hasCart()) {
+			throw new IllegalArgumentException("User does not have a cart");
+		}
+
+		Cart cart = user.getCart();
+		cart.getItems().forEach(cartItemRepository::delete);
+		cart.getItems().clear();
+		cart.setUpdatedAt(LocalDateTime.now());
+		cartRepository.save(cart);
 
 	}
 
@@ -132,5 +240,17 @@ public class CartServiceImpl implements CartService{
 
 		cart.getItems().add(cartItem);
 		cartRepository.save(cart);
+	}
+
+	private Cart createCartForUser(User user) {
+		Cart cart = new Cart();
+		cart.setUser(user);
+		cart.setCreatedAt(LocalDateTime.now());
+		cartRepository.save(cart);
+
+		user.setCart(cart);
+		userRepository.save(user);
+
+		return cart;
 	}
 }
