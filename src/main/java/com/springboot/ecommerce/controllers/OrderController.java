@@ -2,6 +2,7 @@ package com.springboot.ecommerce.controllers;
 
 import com.springboot.ecommerce.dtos.ApiResponse;
 import com.springboot.ecommerce.dtos.OrderDto;
+import com.springboot.ecommerce.dtos.OrderItemDto;
 import com.springboot.ecommerce.services.OrderService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -54,6 +55,60 @@ public class OrderController {
 				true,
 				null,
 				orderService.getOrderById(userId, orderId)
+		);
+
+		return ResponseEntity.ok(response);
+	}
+
+	@PreAuthorize("hasRole('SELLER')")
+	@GetMapping("/seller")
+	public ResponseEntity<ApiResponse<List<OrderItemDto>>> getSellerOrdersForProduct(
+			@AuthenticationPrincipal Long sellerId) {
+		ApiResponse<List<OrderItemDto>> response = new ApiResponse<>(
+				true,
+				null,
+				orderService.getSellerOrders(sellerId));
+
+		return ResponseEntity.ok(response);
+	}
+
+	@PreAuthorize("hasRole('SELLER')")
+	@GetMapping("/seller/{productId}")
+	public ResponseEntity<ApiResponse<List<OrderDto>>> getSellerOrdersForProduct(
+			@AuthenticationPrincipal Long sellerId,
+			@PathVariable Long productId) {
+		ApiResponse<List<OrderDto>> response = new ApiResponse<>(
+				true,
+				null,
+				orderService.getSellerOrdersForProduct(sellerId, productId));
+
+		return ResponseEntity.ok(response);
+	}
+
+	@PutMapping(params = {"id", "status"})
+	@PreAuthorize("hasRole('SELLER')")
+	public ResponseEntity<ApiResponse<OrderItemDto>> updateOrderItemStatus(
+			@AuthenticationPrincipal Long userId,
+			@RequestParam(name = "id") Long orderItemId,
+			@RequestParam(name = "status") String status) {
+		ApiResponse<OrderItemDto> response = new ApiResponse<>(
+				true,
+				null,
+				orderService.updateOrderItemStatus(userId, orderItemId, status)
+		);
+
+		return ResponseEntity.ok(response);
+	}
+
+	@PutMapping
+	@PreAuthorize("hasRole('CUSTOMER')")
+	public ResponseEntity<ApiResponse<OrderItemDto>> cancelOrder(
+			@AuthenticationPrincipal Long userId,
+			@RequestParam(name = "id") Long orderItemId) {
+		ApiResponse<OrderItemDto> response = new ApiResponse<>(
+				true,
+				null,
+				orderService.cancelOrder(userId, orderItemId)
 		);
 
 		return ResponseEntity.ok(response);

@@ -3,12 +3,11 @@ package com.springboot.ecommerce.services;
 import com.springboot.ecommerce.dtos.OrderDto;
 import com.springboot.ecommerce.dtos.OrderItemDto;
 import com.springboot.ecommerce.entities.*;
+import com.springboot.ecommerce.exceptions.OrderItemNotFoundException;
+import com.springboot.ecommerce.exceptions.ProductNotFoundException;
 import com.springboot.ecommerce.exceptions.UserNotFoundException;
 import com.springboot.ecommerce.mappers.OrderMapper;
-import com.springboot.ecommerce.repositories.CartRepository;
-import com.springboot.ecommerce.repositories.OrderItemRepository;
-import com.springboot.ecommerce.repositories.OrderRepository;
-import com.springboot.ecommerce.repositories.UserRepository;
+import com.springboot.ecommerce.repositories.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,6 +25,7 @@ public class OrderServiceImpl implements OrderService{
 	private OrderItemRepository orderItemRepository;
 	private UserRepository userRepository;
 	private CartRepository cartRepository;
+	private ProductRepository productRepository;
 	private CartService cartService;
 
 	@Override
@@ -58,7 +58,7 @@ public class OrderServiceImpl implements OrderService{
 
 		List<OrderItem> orderItems = new ArrayList<>(
 				items.stream()
-						.map(item -> createOrderItemfromCartItem(item, order))
+						.map(item -> createOrderItemFromCartItem(item, order))
 						.toList()
 		);
 
@@ -105,20 +105,99 @@ public class OrderServiceImpl implements OrderService{
 	}
 
 	@Override
-	public List<OrderItemDto> getSellerOrdersForProduct(Long sellerId, Long productId) {
-		return List.of();
+	@Transactional
+	public List<OrderItemDto> getSellerOrders(Long sellerId) {
+		User user = userRepository.findById(sellerId).orElseThrow(UserNotFoundException::new);
+		if (!user.isSeller()) {
+			throw new RuntimeException("Only sellers have access to this endpoint");
+		}
+
+		List<Product> products = productRepository.findAllBySellerId(sellerId);
+
+		if (products.isEmpty()) {
+			throw new RuntimeException("This Seller has no products");
+		}
+
+		List<OrderItem> items = new ArrayList<>();
+		for (Product product : products) {
+			items.addAll(orderItemRepository.findAllByProductId(product.getId()));
+		}
+
+		return items.stream().map(orderMapper::toItemDto).toList();
 	}
 
 	@Override
-	public OrderDto updateOrderItemStatus(Long userId, Long orderItemId, String status) {
-		return null;
+	public List<OrderDto> getSellerOrdersForProduct(Long sellerId, Long productId) {
+		User user = userRepository.findById(sellerId).orElseThrow(UserNotFoundException::new);
+		if (!user.isSeller()) {
+			throw new RuntimeException("Only sellers have access to this endpoint");
+		}
+		Product product = productRepository.findById(productId).orElseThrow(ProductNotFoundException::new);
+
+		if(!product.getSeller().getId().equals(sellerId)) {
+			throw new RuntimeException("Seller does not have access to this product");
+		}
+
+		List<OrderItem> items = orderItemRepository.findAllByProductId(productId);
+
+		return items.stream().map(item -> orderMapper.toDto(item.getOrder())).toList();
 	}
 
 	@Override
-	public void cancelOrder(Long userId, Long orderId) {
+	public OrderItemDto updateOrderItemStatus(Long userId, Long orderItemId, String status) {
+		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+		if (!user.isSeller()) {
+			throw new RuntimeException("Only sellers can update order item status");
+		}
+
+		OrderItem item = orderItemRepository
+				.findById(orderItemId)
+				.orElseThrow(OrderItemNotFoundException::new);
+
+		if (!item.getProduct().getSeller().getId().equals(userId)) {
+			throw new RuntimeException("Seller does not have access to this order item");
+		}
+
+		 try {
+			 OrderStatus newStatus = OrderStatus.valueOf(status.toUpperCase());
+			 item.setStatus(newStatus);
+			 item.setUpdatedAt(LocalDateTime.now());
+			 orderItemRepository.save(item);
+		 } catch (IllegalArgumentException e) {
+			 throw new RuntimeException("Invalid status value");
+		 }
+
+		 item.getOrder().setUpdatedAt(LocalDateTime.now());
+		 orderRepository.save(item.getOrder());
+		 return orderMapper.toItemDto(item);
 	}
 
-	private OrderItem createOrderItemfromCartItem(CartItem cartItem, Order order) {
+	@Override
+	public OrderItemDto cancelOrder(Long userId, Long orderItemId) {
+		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+		if (!user.isCustomer()) {
+			throw new RuntimeException("Only customers can cancel orders");
+		}
+
+		OrderItem item = orderItemRepository
+				.findById(orderItemId)
+				.orElseThrow(OrderItemNotFoundException::new);
+
+		if (!item.getOrder().getCustomer().getId().equals(userId)) {
+			throw new RuntimeException("Customer does not have access to this order item");
+		}
+
+		item.setStatus(OrderStatus.CANCELLED);
+		item.setUpdatedAt(LocalDateTime.now());
+		orderItemRepository.save(item);
+
+		item.getOrder().setUpdatedAt(LocalDateTime.now());
+		orderRepository.save(item.getOrder());
+
+		return orderMapper.toItemDto(item);
+	}
+
+	private OrderItem createOrderItemFromCartItem(CartItem cartItem, Order order) {
 		OrderItem item = new OrderItem();
 		item.setProduct(cartItem.getProduct());
 		item.setCreatedAt(LocalDateTime.now());
