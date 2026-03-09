@@ -1,6 +1,7 @@
 package com.springboot.ecommerce.services;
 
 import com.springboot.ecommerce.dtos.OrderDto;
+import com.springboot.ecommerce.dtos.OrderItemDto;
 import com.springboot.ecommerce.entities.*;
 import com.springboot.ecommerce.exceptions.UserNotFoundException;
 import com.springboot.ecommerce.mappers.OrderMapper;
@@ -29,7 +30,7 @@ public class OrderServiceImpl implements OrderService{
 
 	@Override
 	@Transactional
-	public OrderDto createOrder(Long userId) {
+	public OrderDto placeOrder(Long userId) {
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
 		if (!user.isCustomer()) {
@@ -71,6 +72,50 @@ public class OrderServiceImpl implements OrderService{
 		cartService.clearCart(userId);
 
 		return orderMapper.toDto(order);
+	}
+
+	@Override
+	public List<OrderDto> getAllOrdersForUser(Long userId) {
+		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+		if (!user.isCustomer()) {
+			throw new RuntimeException("Only users have orders");
+		}
+
+		var orders = orderRepository.findAllByCustomerId(userId);
+
+		return orders
+				.stream()
+				.map(orderMapper::toDto)
+				.toList();
+	}
+
+	@Override
+	public OrderDto getOrderById(Long userId, Long orderId) {
+		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+		if (!user.isCustomer()) {
+			throw new RuntimeException("Only users have orders");
+		}
+
+		Order order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+		if (!order.getCustomer().getId().equals(userId)) {
+			throw new RuntimeException("User does not have access to this order");
+		}
+
+		return orderMapper.toDto(order);
+	}
+
+	@Override
+	public List<OrderItemDto> getSellerOrdersForProduct(Long sellerId, Long productId) {
+		return List.of();
+	}
+
+	@Override
+	public OrderDto updateOrderItemStatus(Long userId, Long orderItemId, String status) {
+		return null;
+	}
+
+	@Override
+	public void cancelOrder(Long userId, Long orderId) {
 	}
 
 	private OrderItem createOrderItemfromCartItem(CartItem cartItem, Order order) {
