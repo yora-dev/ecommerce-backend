@@ -31,6 +31,9 @@ public class User {
 	@Column(name = "role")
 	private Role role;
 
+	@OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Cart cart;
+
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
 
@@ -47,5 +50,9 @@ public class User {
 
 	public boolean isCustomer() {
 		return role == Role.CUSTOMER;
+	}
+
+	public boolean hasCart() {
+		return cart != null;
 	}
 }

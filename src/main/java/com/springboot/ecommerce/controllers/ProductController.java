@@ -82,7 +82,7 @@ public class ProductController {
 	public ResponseEntity<ApiResponse<ProductDto>> updateProduct(
 			@AuthenticationPrincipal Long userId,
 			@PathVariable Long productId,
-			@RequestBody UpdateProductDto dto) {
+			@Valid @RequestBody UpdateProductDto dto) {
 		ApiResponse<ProductDto> response = new ApiResponse<>(
 				true,
 				null,
