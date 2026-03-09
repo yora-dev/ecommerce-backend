@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class OrderMapper {
-	OrderDto toDto(Order order) {
+	public OrderDto toDto(Order order) {
 		OrderDto dto = new OrderDto();
 		dto.setId(order.getId());
 		dto.setCreatedAt(order.getCreatedAt());
@@ -20,7 +20,7 @@ public class OrderMapper {
 		return dto;
 	}
 
-	OrderItemDto toItemDto(OrderItem item) {
+	public OrderItemDto toItemDto(OrderItem item) {
 		OrderItemDto dto = new OrderItemDto();
 		dto.setId(item.getId());
 		dto.setOrderId(item.getOrder().getId());
@@ -32,4 +32,6 @@ public class OrderMapper {
 		dto.setUpdatedAt(item.getUpdatedAt());
 		return dto;
 	}
+
+
 }

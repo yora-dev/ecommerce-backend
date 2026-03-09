@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -31,7 +32,7 @@ public class Order {
 	private BigDecimal totalPrice;
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-	private List<OrderItem> items;
+	private List<OrderItem> items = new ArrayList<>();
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
