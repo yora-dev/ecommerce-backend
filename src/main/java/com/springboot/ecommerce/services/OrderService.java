@@ -12,7 +12,7 @@ public interface OrderService {
 	List<OrderDto> getAllOrdersForUser(Long userId);
 	OrderDto getOrderById(Long userId, Long orderId);
 	List<OrderItemDto> getSellerOrders(Long sellerId);
-	List<OrderDto> getSellerOrdersForProduct(Long sellerId, Long productId);
+	List<OrderItemDto> getSellerOrdersForProduct(Long sellerId, Long productId);
 	OrderItemDto updateOrderItemStatus(Long userId, Long orderItemId, String status);
-	OrderItemDto cancelOrder(Long userId, Long orderItemId);
+	void cancelOrder(Long userId, Long orderId);
 }

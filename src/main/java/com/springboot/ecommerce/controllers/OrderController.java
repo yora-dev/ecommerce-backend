@@ -74,10 +74,10 @@ public class OrderController {
 
 	@PreAuthorize("hasRole('SELLER')")
 	@GetMapping("/seller/{productId}")
-	public ResponseEntity<ApiResponse<List<OrderDto>>> getSellerOrdersForProduct(
+	public ResponseEntity<ApiResponse<List<OrderItemDto>>> getSellerOrdersForProduct(
 			@AuthenticationPrincipal Long sellerId,
 			@PathVariable Long productId) {
-		ApiResponse<List<OrderDto>> response = new ApiResponse<>(
+		ApiResponse<List<OrderItemDto>> response = new ApiResponse<>(
 				true,
 				null,
 				orderService.getSellerOrdersForProduct(sellerId, productId));
@@ -89,7 +89,7 @@ public class OrderController {
 	@PreAuthorize("hasRole('SELLER')")
 	public ResponseEntity<ApiResponse<OrderItemDto>> updateOrderItemStatus(
 			@AuthenticationPrincipal Long userId,
-			@RequestParam(name = "id") Long orderItemId,
+			@RequestParam(name = "orderItemId") Long orderItemId,
 			@RequestParam(name = "status") String status) {
 		ApiResponse<OrderItemDto> response = new ApiResponse<>(
 				true,
@@ -102,15 +102,11 @@ public class OrderController {
 
 	@PutMapping
 	@PreAuthorize("hasRole('CUSTOMER')")
-	public ResponseEntity<ApiResponse<OrderItemDto>> cancelOrder(
+	public ResponseEntity<Void> cancelOrder(
 			@AuthenticationPrincipal Long userId,
-			@RequestParam(name = "id") Long orderItemId) {
-		ApiResponse<OrderItemDto> response = new ApiResponse<>(
-				true,
-				null,
-				orderService.cancelOrder(userId, orderItemId)
-		);
+			@RequestParam(name = "orderId") Long orderId) {
+		orderService.cancelOrder(userId, orderId);
 
-		return ResponseEntity.ok(response);
+		return ResponseEntity.noContent().build();
 	}
 }

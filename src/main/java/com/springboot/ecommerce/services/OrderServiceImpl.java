@@ -4,6 +4,7 @@ import com.springboot.ecommerce.dtos.OrderDto;
 import com.springboot.ecommerce.dtos.OrderItemDto;
 import com.springboot.ecommerce.entities.*;
 import com.springboot.ecommerce.exceptions.OrderItemNotFoundException;
+import com.springboot.ecommerce.exceptions.OrderNotFoundException;
 import com.springboot.ecommerce.exceptions.ProductNotFoundException;
 import com.springboot.ecommerce.exceptions.UserNotFoundException;
 import com.springboot.ecommerce.mappers.OrderMapper;
@@ -127,7 +128,7 @@ public class OrderServiceImpl implements OrderService{
 	}
 
 	@Override
-	public List<OrderDto> getSellerOrdersForProduct(Long sellerId, Long productId) {
+	public List<OrderItemDto> getSellerOrdersForProduct(Long sellerId, Long productId) {
 		User user = userRepository.findById(sellerId).orElseThrow(UserNotFoundException::new);
 		if (!user.isSeller()) {
 			throw new RuntimeException("Only sellers have access to this endpoint");
@@ -140,7 +141,7 @@ public class OrderServiceImpl implements OrderService{
 
 		List<OrderItem> items = orderItemRepository.findAllByProductId(productId);
 
-		return items.stream().map(item -> orderMapper.toDto(item.getOrder())).toList();
+		return items.stream().map(item -> orderMapper.toItemDto(item)).toList();
 	}
 
 	@Override
@@ -173,28 +174,27 @@ public class OrderServiceImpl implements OrderService{
 	}
 
 	@Override
-	public OrderItemDto cancelOrder(Long userId, Long orderItemId) {
+	public void cancelOrder(Long userId, Long orderId) {
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 		if (!user.isCustomer()) {
 			throw new RuntimeException("Only customers can cancel orders");
 		}
 
-		OrderItem item = orderItemRepository
-				.findById(orderItemId)
-				.orElseThrow(OrderItemNotFoundException::new);
+		Order order = orderRepository.findById(orderId).orElseThrow(OrderNotFoundException::new);
 
-		if (!item.getOrder().getCustomer().getId().equals(userId)) {
-			throw new RuntimeException("Customer does not have access to this order item");
+		if (!order.getCustomer().getId().equals(userId)) {
+			throw new RuntimeException("User does not have access to this order");
 		}
 
-		item.setStatus(OrderStatus.CANCELLED);
-		item.setUpdatedAt(LocalDateTime.now());
-		orderItemRepository.save(item);
+		if (order.getItems().stream().anyMatch(item -> item.getStatus() != OrderStatus.PENDING)) {
+			throw new RuntimeException("Cannot cancel order with items that are already processed");
+		}
 
-		item.getOrder().setUpdatedAt(LocalDateTime.now());
-		orderRepository.save(item.getOrder());
-
-		return orderMapper.toItemDto(item);
+		order.getItems().forEach(item -> {
+			item.setStatus(OrderStatus.CANCELLED);
+			item.setUpdatedAt(LocalDateTime.now());
+			orderItemRepository.save(item);
+		});
 	}
 
 	private OrderItem createOrderItemFromCartItem(CartItem cartItem, Order order) {
