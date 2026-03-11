@@ -3,8 +3,6 @@ package com.springboot.ecommerce.controllers;
 import com.springboot.ecommerce.config.JwtConfig;
 import com.springboot.ecommerce.dtos.*;
 import com.springboot.ecommerce.entities.User;
-import com.springboot.ecommerce.exceptions.DuplicateResourceException;
-import com.springboot.ecommerce.exceptions.UserNotFoundException;
 import com.springboot.ecommerce.repositories.UserRepository;
 import com.springboot.ecommerce.services.AuthService;
 import com.springboot.ecommerce.services.JwtService;
@@ -63,7 +61,7 @@ public class AuthController {
 	public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(
 			@CookieValue(name = "refreshToken") String refreshToken
 	) {
-		if(jwtService.isTokenValid(refreshToken)) {
+		if(!jwtService.isTokenValid(refreshToken)) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
 
@@ -76,16 +74,4 @@ public class AuthController {
 				null,
 				new LoginResponse(accessToken)));
 	}
-
-//	@GetMapping("/me")
-//	public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(
-//			@AuthenticationPrincipal Long userId) {
-//		return ResponseEntity.ok(new ApiResponse<>(
-//				true,
-//				null,
-//				authService.loggedInUser(userId)));
-//	}
-
-
-
 }
