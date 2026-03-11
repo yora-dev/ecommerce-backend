@@ -13,7 +13,7 @@ import javax.crypto.SecretKey;
 
 @Data
 public class JwtConfig {
-	@Value("${spring.jwt.secret-key}")
+	@Value("${spring.jwt.secretKey}")
 	private String secretKey;
 
 	@Value("${spring.jwt.accessTokenExpiration}")
