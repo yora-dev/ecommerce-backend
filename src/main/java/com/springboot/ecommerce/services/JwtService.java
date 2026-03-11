@@ -39,9 +39,9 @@ public class JwtService {
 
 		try {
 			var claims = getClaims(token);
-			return !claims.getExpiration().after(new Date());
+			return claims.getExpiration().after(new Date());
 		} catch (Exception ex) {
-			return true;
+			return false;
 		}
 
 	}

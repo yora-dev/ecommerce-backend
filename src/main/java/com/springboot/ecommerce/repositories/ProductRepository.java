@@ -1,6 +1,7 @@
 package com.springboot.ecommerce.repositories;
 
 import com.springboot.ecommerce.entities.Product;
+import com.springboot.ecommerce.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,6 +10,6 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 	List<Product> findAllByCategoryId(Long categoryId);
-	List<Product> findAllBySellerId(Long sellerId);
-
+	List<Product> findAllBySeller(User seller);
+	List<Product> findAllBySellerId(Long userId);
 }

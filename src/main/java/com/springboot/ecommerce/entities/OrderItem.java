@@ -6,33 +6,39 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "order_items")
 @Getter
 @Setter
-@Table(name = "carts")
 
-public class Cart {
+public class OrderItem {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private Long id;
 
-	@OneToOne
-	@JoinColumn(name = "user_id")
-	private User user;
+	@ManyToOne
+	@JoinColumn(name = "order_id")
+	private Order order;
 
-	@OneToMany(
-			mappedBy = "cart" ,
-			cascade = CascadeType.ALL ,
-			orphanRemoval = true
-	)
-	private List<CartItem> items = new ArrayList<>();
+	@ManyToOne
+	@JoinColumn(name = "product_id")
+	private Product product;
+
+	@Column(name = "quantity")
+	private Integer quantity;
+
+	@Column(name = "unit_price")
+	private BigDecimal priceAtOrder;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status")
+	private OrderStatus status;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
